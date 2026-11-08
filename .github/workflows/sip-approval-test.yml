@@ -14,5 +14,13 @@ jobs:
     environment: sip-approval-test
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify SIP fingerprint
+        shell: bash
+        run: |
+          echo "0aa4295a59587540d7439b8f92bb7fb556fe1007f91c888851d9b895b9e93073  docs/plans/2-add-an-export-command.md" | sha256sum --check
+
       - name: Confirm approval
         run: echo "Human approval checkpoint passed!"
