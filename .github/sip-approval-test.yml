@@ -1,0 +1,18 @@
+
+name: SIP Approval Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  approval-test:
+    name: Test human approval
+    runs-on: ubuntu-latest
+    environment: sip-approval-test
+
+    steps:
+      - name: Confirm approval
+        run: echo "Human approval checkpoint passed!"
