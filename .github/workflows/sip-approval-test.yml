@@ -8,8 +8,30 @@ permissions:
   contents: read
 
 jobs:
-  approval-test:
+  prepare:
+    name: Prepare SIP fingerprint
+    runs-on: ubuntu-latest
+
+    outputs:
+      sip_hash: ${{ steps.fingerprint.outputs.sip_hash }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Calculate SIP fingerprint
+        id: fingerprint
+        shell: bash
+        run: |
+          SIP="docs/plans/2-add-an-export-command.md"
+          HASH=$(sha256sum "$SIP" | cut -d ' ' -f1)
+          echo "sip_hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "SIP: $SIP"
+          echo "SHA-256: $HASH"
+
+  approval:
     name: Test human approval
+    needs: prepare
     runs-on: ubuntu-latest
     environment: sip-approval-test
 
@@ -17,10 +39,23 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Verify SIP fingerprint
+      - name: Verify approved SIP fingerprint
         shell: bash
+        env:
+          EXPECTED_HASH: ${{ needs.prepare.outputs.sip_hash }}
         run: |
-          echo "0aa4295a59587540d7439b8f92bb7fb556fe1007f91c888851d9b895b9e93073  docs/plans/2-add-an-export-command.md" | sha256sum --check
+          SIP="docs/plans/2-add-an-export-command.md"
+          ACTUAL_HASH=$(sha256sum "$SIP" | cut -d ' ' -f1)
+
+          echo "Expected: $EXPECTED_HASH"
+          echo "Actual:   $ACTUAL_HASH"
+
+          if [ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]; then
+            echo "SIP fingerprint mismatch!"
+            exit 1
+          fi
+
+          echo "SIP fingerprint verified!"
 
       - name: Confirm approval
         run: echo "Human approval checkpoint passed!"
